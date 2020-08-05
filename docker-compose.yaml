@@ -7,12 +7,13 @@ volumes:
 services:
   core-data:
     image: iotechsys/edgexpert-core-data:1.6
-    container_name: edgex-core-data
     hostname: edgex-core-data
     entrypoint: /core-data
     command: --registry=true --confdir=/res --profile=docker
     networks:
-    - edgexpert-network
+      edgexpert-network:
+        aliases:
+        - edgex-core-data
     ports:
     - published: 48080
       target: 48080
@@ -38,12 +39,13 @@ services:
         max-file: '20'
   core-metadata:
     image: iotechsys/edgexpert-core-metadata:1.6
-    container_name: edgex-core-metadata
     hostname: edgex-core-metadata
     entrypoint: /core-metadata
     command: --registry=true --confdir=/res --profile=docker
     networks:
-    - edgexpert-network
+      edgexpert-network:
+        aliases:
+        - edgex-core-metadata
     ports:
     - published: 48081
       target: 48081
@@ -67,12 +69,13 @@ services:
         max-file: '20'
   core-command:
     image: iotechsys/edgexpert-core-command:1.6
-    container_name: edgex-core-command
     hostname: edgex-core-command
     entrypoint: /core-command
     command: --registry=true --confdir=/res --profile=docker
     networks:
-    - edgexpert-network
+      edgexpert-network:
+        aliases:
+        - edgex-core-command
     ports:
     - published: 48082
       target: 48082
@@ -96,11 +99,12 @@ services:
         max-file: '20'
   core-consul:
     image: consul:1.6
-    container_name: edgex-core-consul
     hostname: edgex-core-consul
     command: agent -server -bootstrap-expect=1 -client 0.0.0.0 -ui
     networks:
-    - edgexpert-network
+      edgexpert-network:
+        aliases:
+        - edgex-core-consul
     ports:
     - published: 8400
       target: 8400
@@ -122,12 +126,13 @@ services:
         max-file: '20'
   export-distro:
     image: iotechsys/edgexpert-export-distro:1.6
-    container_name: edgex-export-distro
     hostname: edgex-export-distro
     entrypoint: /export-distro
     command: --registry=true --confdir=/res --profile=docker
     networks:
-    - edgexpert-network
+      edgexpert-network:
+        aliases:
+        - edgex-export-distro
     ports:
     - published: 48070
       target: 48070
@@ -151,12 +156,13 @@ services:
         max-file: '20'
   export-client:
     image: iotechsys/edgexpert-export-client:1.6
-    container_name: edgex-export-client
     hostname: edgex-export-client
     entrypoint: /export-client
     command: --registry=true --confdir=/res --profile=docker
     networks:
-    - edgexpert-network
+      edgexpert-network:
+        aliases:
+        - edgex-export-client
     ports:
     - published: 48071
       target: 48071
@@ -180,12 +186,13 @@ services:
         max-file: '20'
   redis:
     image: iotechsys/edgexpert-redis:1.6
-    container_name: edgex-redis
     hostname: edgex-redis
     entrypoint: redis-server
     command: /etc/redis/redis.conf --loglevel notice
     networks:
-    - edgexpert-network
+      edgexpert-network:
+        aliases:
+        - edgex-redis
     ports:
     - published: 6379
       target: 6379
@@ -201,13 +208,14 @@ services:
         max-file: '20'
   device-virtual:
     image: iotechsys/edgexpert-device-virtual:1.6
-    container_name: edgex-device-virtual
     hostname: edgex-device-virtual
     entrypoint: /device-virtual
     command: --registry=consul://edgex-core-consul:8500 --confdir=/res --profile=docker
       --name=device-virtual
     networks:
-    - edgexpert-network
+      edgexpert-network:
+        aliases:
+        - edgex-device-virtual
     ports:
     - published: 49990
       target: 49990
@@ -223,12 +231,13 @@ services:
         max-file: '20'
   xpert-manager:
     image: iotechsys/edgexpert-iotech-manager:1.6
-    container_name: xpert-manager
     hostname: xpert-manager
     entrypoint: /root/go-ui-server
     command: --multi-user=false
     networks:
-    - edgexpert-network
+      edgexpert-network:
+        aliases:
+        - xpert-manager
     ports:
     - published: 8080
       target: 8080
@@ -255,7 +264,7 @@ services:
         max-size: 10mb
         max-file: '20'
   edgexpert-provisioning:
-    image: iotechsys/sys-mgmt-demo-prov :1.0
+    image: edgebuilder_demo-edgexpert-provisioning:0.1
     deploy:
       restart_policy:
         condition: on-failure
@@ -270,7 +279,7 @@ services:
     - device-virtual
     - xpert-manager
   license-provisioning:
-    image: iotechsys/sys-mgmt-demo-license-prov:1.0
+    image: edgebuilder_demo-edgexpert-license-provisioning:0.1
     volumes:
     - type: volume
       source: license-data
@@ -281,4 +290,4 @@ services:
         condition: on-failure
 networks:
   edgexpert-network:
-    driver: bridge
+    driver: overlay
