@@ -1,0 +1,284 @@
+version: '3.7'
+volumes:
+  license-data: {}
+  consul-data: {}
+  vault-config-data: {}
+  xpert-manager-data: {}
+services:
+  core-data:
+    image: iotechsys/edgexpert-core-data:1.6
+    container_name: edgex-core-data
+    hostname: edgex-core-data
+    entrypoint: /core-data
+    command: --registry=true --confdir=/res --profile=docker
+    networks:
+    - edgexpert-network
+    ports:
+    - published: 48080
+      target: 48080
+    - published: 5563
+      target: 5563
+    environment:
+      EDGEXPERT_LICENSE_PATH: /edgexpert/licenses/
+      EDGEX_SECURITY_SECRET_STORE: 'false'
+      Logging_EnableRemote: 'false'
+      edgex_registry: ''
+    volumes:
+    - type: volume
+      source: license-data
+      target: /edgexpert/licenses/
+      read_only: true
+    depends_on:
+    - redis
+    - license-provisioning
+    logging:
+      driver: json-file
+      options:
+        max-size: 10mb
+        max-file: '20'
+  core-metadata:
+    image: iotechsys/edgexpert-core-metadata:1.6
+    container_name: edgex-core-metadata
+    hostname: edgex-core-metadata
+    entrypoint: /core-metadata
+    command: --registry=true --confdir=/res --profile=docker
+    networks:
+    - edgexpert-network
+    ports:
+    - published: 48081
+      target: 48081
+    environment:
+      EDGEXPERT_LICENSE_PATH: /edgexpert/licenses/
+      EDGEX_SECURITY_SECRET_STORE: 'false'
+      Logging_EnableRemote: 'false'
+      edgex_registry: ''
+    volumes:
+    - type: volume
+      source: license-data
+      target: /edgexpert/licenses/
+      read_only: true
+    depends_on:
+    - redis
+    - license-provisioning
+    logging:
+      driver: json-file
+      options:
+        max-size: 10mb
+        max-file: '20'
+  core-command:
+    image: iotechsys/edgexpert-core-command:1.6
+    container_name: edgex-core-command
+    hostname: edgex-core-command
+    entrypoint: /core-command
+    command: --registry=true --confdir=/res --profile=docker
+    networks:
+    - edgexpert-network
+    ports:
+    - published: 48082
+      target: 48082
+    environment:
+      EDGEXPERT_LICENSE_PATH: /edgexpert/licenses/
+      EDGEX_SECURITY_SECRET_STORE: 'false'
+      Logging_EnableRemote: 'false'
+      edgex_registry: ''
+    volumes:
+    - type: volume
+      source: license-data
+      target: /edgexpert/licenses/
+      read_only: true
+    depends_on:
+    - core-metadata
+    - license-provisioning
+    logging:
+      driver: json-file
+      options:
+        max-size: 10mb
+        max-file: '20'
+  core-consul:
+    image: consul:1.6
+    container_name: edgex-core-consul
+    hostname: edgex-core-consul
+    command: agent -server -bootstrap-expect=1 -client 0.0.0.0 -ui
+    networks:
+    - edgexpert-network
+    ports:
+    - published: 8400
+      target: 8400
+    - published: 8500
+      target: 8500
+    - published: 8600
+      target: 8600
+    environment:
+      CONSUL_BIND_INTERFACE: eth0
+    volumes:
+    - type: volume
+      source: consul-data
+      target: /consul
+      read_only: false
+    logging:
+      driver: json-file
+      options:
+        max-size: 10mb
+        max-file: '20'
+  export-distro:
+    image: iotechsys/edgexpert-export-distro:1.6
+    container_name: edgex-export-distro
+    hostname: edgex-export-distro
+    entrypoint: /export-distro
+    command: --registry=true --confdir=/res --profile=docker
+    networks:
+    - edgexpert-network
+    ports:
+    - published: 48070
+      target: 48070
+    environment:
+      EDGEXPERT_LICENSE_PATH: /edgexpert/licenses/
+      EDGEX_SECURITY_SECRET_STORE: 'false'
+      Logging_EnableRemote: 'false'
+      edgex_registry: ''
+    volumes:
+    - type: volume
+      source: license-data
+      target: /edgexpert/licenses/
+      read_only: true
+    depends_on:
+    - export-client
+    - license-provisioning
+    logging:
+      driver: json-file
+      options:
+        max-size: 10mb
+        max-file: '20'
+  export-client:
+    image: iotechsys/edgexpert-export-client:1.6
+    container_name: edgex-export-client
+    hostname: edgex-export-client
+    entrypoint: /export-client
+    command: --registry=true --confdir=/res --profile=docker
+    networks:
+    - edgexpert-network
+    ports:
+    - published: 48071
+      target: 48071
+    environment:
+      EDGEXPERT_LICENSE_PATH: /edgexpert/licenses/
+      EDGEX_SECURITY_SECRET_STORE: 'false'
+      Logging_EnableRemote: 'false'
+      edgex_registry: ''
+    volumes:
+    - type: volume
+      source: license-data
+      target: /edgexpert/licenses/
+      read_only: true
+    depends_on:
+    - core-data
+    - license-provisioning
+    logging:
+      driver: json-file
+      options:
+        max-size: 10mb
+        max-file: '20'
+  redis:
+    image: iotechsys/edgexpert-redis:1.6
+    container_name: edgex-redis
+    hostname: edgex-redis
+    entrypoint: redis-server
+    command: /etc/redis/redis.conf --loglevel notice
+    networks:
+    - edgexpert-network
+    ports:
+    - published: 6379
+      target: 6379
+    volumes:
+    - type: volume
+      source: vault-config-data
+      target: /vault/config
+      read_only: false
+    logging:
+      driver: json-file
+      options:
+        max-size: 10mb
+        max-file: '20'
+  device-virtual:
+    image: iotechsys/edgexpert-device-virtual:1.6
+    container_name: edgex-device-virtual
+    hostname: edgex-device-virtual
+    entrypoint: /device-virtual
+    command: --registry=consul://edgex-core-consul:8500 --confdir=/res --profile=docker
+      --name=device-virtual
+    networks:
+    - edgexpert-network
+    ports:
+    - published: 49990
+      target: 49990
+    depends_on:
+    - core-metadata
+    - core-data
+    - core-command
+    - license-provisioning
+    logging:
+      driver: json-file
+      options:
+        max-size: 10mb
+        max-file: '20'
+  xpert-manager:
+    image: iotechsys/edgexpert-iotech-manager:1.6
+    container_name: xpert-manager
+    hostname: xpert-manager
+    entrypoint: /root/go-ui-server
+    command: --multi-user=false
+    networks:
+    - edgexpert-network
+    ports:
+    - published: 8080
+      target: 8080
+    environment:
+      VAULT_CA_FILE_PATH: /vault/config/pki/EdgeXFoundryCA/EdgeXFoundryCA.pem
+      VAULT_TOKEN_FILE_PATH: /vault/config/assets/resp-init.json
+      VAULT_ADDR: https://edgex-vault:8200
+    volumes:
+    - type: volume
+      source: vault-config-data
+      target: /vault/config
+      read_only: false
+    - type: volume
+      source: xpert-manager-data
+      target: /xpert-manager/data
+      read_only: false
+    depends_on:
+    - core-metadata
+    - core-data
+    - core-command
+    logging:
+      driver: json-file
+      options:
+        max-size: 10mb
+        max-file: '20'
+  edgexpert-provisioning:
+    image: iotechsys/sys-mgmt-demo-prov :1.0
+    deploy:
+      restart_policy:
+        condition: on-failure
+    depends_on:
+    - core-data
+    - core-metadata
+    - core-command
+    - core-consul
+    - export-distro
+    - export-client
+    - redis
+    - device-virtual
+    - xpert-manager
+  license-provisioning:
+    image: iotechsys/sys-mgmt-demo-license-prov:1.0
+    volumes:
+    - type: volume
+      source: license-data
+      target: /edgexpert/licenses/
+      read_only: false
+    deploy:
+      restart_policy:
+        condition: on-failure
+networks:
+  edgexpert-network:
+    driver: bridge
