@@ -264,7 +264,7 @@ services:
         max-size: 10mb
         max-file: '20'
   edgexpert-provisioning:
-    image: edgebuilder_demo-edgexpert-provisioning:0.1
+    image: sys_mgmt_demo-edgexpert-provisioning:1.0
     deploy:
       restart_policy:
         condition: on-failure
@@ -279,7 +279,7 @@ services:
     - device-virtual
     - xpert-manager
   license-provisioning:
-    image: edgebuilder_demo-edgexpert-license-provisioning:0.1
+    image: sys_mgmt_demo-edgexpert-license-provisioning:1.0
     volumes:
     - type: volume
       source: license-data
